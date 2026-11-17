@@ -1,124 +1,113 @@
-import sys
-B=list("rnbqkbnr"+"pppppppp"+"."*32+"PPPPPPPP"+"RNBQKBNR")
-V={'p':100,'n':320,'b':330,'r':500,'q':900,'k':0,'.':0}
+import os,json,sys,urllib.request as u
+U=os.environ["MAKEFUN_ENV_URL"]
+def P(p,b):
+ r=u.Request(U+p,json.dumps(b).encode(),{"content-type":"application/json"});return json.load(u.urlopen(r))
+V={'p':100,'n':320,'b':330,'r':500,'q':900,'k':0}
+W=[0,0,0,0,0,0,0,0,5,10,10,10,10,10,10,5,5,5,10,15,15,10,5,5,0,0,5,10,10,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 N=[(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
 K=[(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
-G={'n':N,'b':[(-1,-1),(-1,1),(1,-1),(1,1)],'r':[(0,1),(0,-1),(1,0),(-1,0)],'q':K,'k':K}
-def pc(i):return B[i]
-def side(p):return p.isupper()
-def idx(s):return (8-int(s[1]))*8+ord(s[0])-97
-def nm(i):return "abcdefgh"[i%8]+str(8-i//8)
-def gen(w):
-    out=[]
-    for i,p in enumerate(B):
-        if p=='.' or side(p)!=w:continue
-        t=p.lower();r,c=divmod(i,8);d=-1 if w else 1
-        if t=='p':
-            j=i+8*d
-            if 0<=j<64 and B[j]=='.':
-                out.append((i,j,'q' if r+d in(0,7) else ''))
-                j2=i+16*d
-                if r in(1,6)and B[j2]=='.':out.append((i,j2,''))
-            for dc in(-1,1):
-                c2=c+dc;r2=r+d
-                if 0<=c2<8 and 0<=r2<8:
-                    j=r2*8+c2
-                    if B[j]!='.' and side(B[j])!=w:out.append((i,j,'q' if r2 in(0,7) else ''))
-        elif t=='n' or t=='k':
-            for dr,dc in G[t]:
-                r2,c2=r+dr,c+dc
-                if 0<=r2<8 and 0<=c2<8:
-                    j=r2*8+c2
-                    if B[j]=='.' or side(B[j])!=w:out.append((i,j,''))
-        else:
-            for dr,dc in G[t]:
-                r2,c2=r+dr,c+dc
-                while 0<=r2<8 and 0<=c2<8:
-                    j=r2*8+c2
-                    if B[j]!='.':
-                        if side(B[j])!=w:out.append((i,j,''))
-                        break
-                    out.append((i,j,''))
-                    r2+=dr;c2+=dc
-    return out
-def put(b,i,j,pr=''):
-    b[j]=b[i].lower() if pr else b[i];b[i]='.'
-    if pr:b[j]=pr.upper() if side(b[j]) else pr
-def king(b,w):
-    t='K' if w else 'k'
-    return b.index(t)
-def att(b,sq,w):
-    for i,p in enumerate(b):
-        if p=='.' or side(p)!=w:continue
-        r,c=divmod(i,8);t=p.lower()
-        if t=='p':
-            d=-1 if w else 1
-            if sq//8==r+d and abs(sq%8-c)==1:return 1
-        elif t in G:
-            for dr,dc in G[t]:
-                r2,c2=r+dr,c+dc
-                while 0<=r2<8 and 0<=c2<8:
-                    if r2*8+c2==sq:return 1
-                    if b[r2*8+c2]!='.':break
-                    r2+=dr;c2+=dc
-                    if t in'nk':break
-    return 0
-def legal(w):
-    out=[]
-    for m in gen(w):
-        b=B[:]
-        put(b,m[0],m[1],m[2])
-        e=-1
-        if att(b,king(b,w),not w):continue
-        out.append(m)
-    return out
-def perft(w,d):
-    if d==0:return 1
-    n=0
-    for m in legal(w):
-        global B
-        old=B;B=B[:];put(B,m[0],m[1],m[2])
-        n+=perft(not w,d-1)
-        B=old
-    return n
-def ev():
-    s=0
-    for p in B:
-        if p=='.':continue
-        v=V[p.lower()]
-        s+= v if side(p) else -v
-    return s
-def search(w,d,a,b):
-    if d==0:return ev() if w else -ev(),None
-    best=None;sc=-99999 if w else 99999
-    for m in legal(w):
-        global B
-        old=B;B=B[:];put(B,m[0],m[1],m[2])
-        v,_=search(not w,d-1,a,b)
-        B=old
-        if w and v>sc:sc,best=v,m
-        if not w and v<sc:sc,best=v,m
-    return sc,best
-def mv(s):
-    a=idx(s[:2]);c=idx(s[2:4]);pr=s[4:5] if len(s)>4 else ''
-    put(B,a,c,pr)
-w=True
-for line in sys.stdin:
-    t=line.split()
-    if not t:continue
-    if t[0]=='uci':print('id name tiny4k');print('id author gn-buffy-swarm');print('uciok')
-    elif t[0]=='isready':print('readyok')
-    elif t[0]=='position':
-        B=list("rnbqkbnr"+"pppppppp"+"."*32+"PPPPPPPP"+"RNBQKBNR");w=True
-        if 'moves' in t:
-            for s in t[t.index('moves')+1:]:mv(s);w=not w
-    elif t[0]=='go' and 'perft' in t:
-        print('nodes',perft(w,int(t[t.index('perft')+1])))
-    elif t[0]=='go':
-        d=4
-        if 'depth' in t:d=int(t[t.index('depth')+1])
-        sc,m=search(w,d,-99999,99999)
-        print('info depth',d,'score cp',sc)
-        print('bestmove',nm(m[0])+nm(m[1]) if m else '0000')
-    elif t[0]=='quit':break
-    sys.stdout.flush()
+R=[(0,1),(0,-1),(1,0),(-1,0)]
+B=[(1,1),(1,-1),(-1,1),(-1,-1)]
+def sq(s):return ord(s[0])-97+8*(int(s[1])-1)
+def fen(f):
+ b=['.']*64
+ for i,r in enumerate(f.split()[0].split('/')):
+  x=0
+  for c in r:
+   if c.isdigit():x+=int(c)
+   else:b[x+8*(7-i)]=c;x+=1
+ return b
+def mv(b,m,epf,w):
+ f,t=m[0],m[1];p=b[f];b[f]='.'
+ if p.lower()=='p' and b[t]=='.' and abs(t-f) in(7,9):j=t+(-8 if w else 8);b[j if 0<=j<64 else f]='.'
+ b[t]=m[2] if len(m)>2 else p
+ if p.lower()=='k' and abs(t-f)==2:
+  r=t+(1 if t>f else -2);d=t+(-1 if t>f else 1);b[d]=b[r];b[r]='.'
+ return b
+def gen(b,w,epf,c):
+ o=[]
+ for i in range(64):
+  p=b[i]
+  if p=='.' or p.isupper()!=w:continue
+  l=p.lower();f,r=i%8,i//8
+  if l=='p':
+   d=1 if w else -1;j=i+8*d
+   if 0<=j<64 and b[j]=='.':
+    if r+d in(0,7):o+=[(i,j,x) for x in'qrbn']
+    else:o.append((i,j))
+    if r in(1,6) and 0<=i+16*d<64 and b[i+16*d]=='.':o.append((i,i+16*d))
+   for x in(-1,1):
+    if 0<=f+x<8 and 0<=r+d<8:
+     j=(r+d)*8+f+x
+     if (b[j]!='.' and b[j].isupper()!=w) or j==epf:
+      if r+d in(0,7):o+=[(i,j,y) for y in'qrbn']
+      else:o.append((i,j))
+  elif l in'nk':
+   for dr,df in(N if l=='n' else K):
+    f2,r2=f+df,r+dr
+    if 0<=f2<8 and 0<=r2<8:
+     j=f2+8*r2
+     if b[j]=='.' or b[j].isupper()!=w:o.append((i,j))
+  else:
+   for dr,df in(R if l=='r' else B if l=='b' else R+B):
+    f2,r2=f+df,r+dr
+    while 0<=f2<8 and 0<=r2<8:
+     j=f2+8*r2
+     if b[j]!='.':
+      if b[j].isupper()!=w:o.append((i,j))
+      break
+     o.append((i,j));f2+=df;r2+=dr
+ if w and b[4]=='K' and b[7]=='R' and b[5]==b[6]=='.' and 'K' in c:o.append((4,6))
+ if w and b[4]=='K' and b[0]=='R' and b[1]==b[2]==b[3]=='.' and 'Q' in c:o.append((4,2))
+ if not w and b[60]=='k' and b[63]=='r' and b[61]==b[62]=='.' and 'k' in c:o.append((60,62))
+ if not w and b[60]=='k' and b[56]=='r' and b[57]==b[58]==b[59]=='.' and 'q' in c:o.append((60,58))
+ return o
+def ev(b):
+ s=0
+ for i,p in enumerate(b):
+  if p!='.':
+   v=V[p.lower()]+W[i if p.isupper() else 63-i]
+   s+=v if p.isupper() else -v
+ return s
+def chk(b,w):
+ k=b.index('K' if w else 'k')
+ return any(m[1]==k for m in gen(b,not w,-1,'-'))
+nt=[0]
+def qs(b,w,epf,c,a,be,q):
+ s=ev(b)
+ if q<1 or s>=be:return s
+ if s>a:a=s
+ for m in gen(b,w,epf,c):
+  if b[m[1]]=='.' and len(m)<3:continue
+  nb=mv(b[:],m,epf,w)
+  if chk(nb,w):continue
+  v=-qs(nb,not w,-1,c,-be,-a,q-1)
+  if v>s:s=v
+  if s>a:a=s
+  if a>=be:break
+ return s
+def ab(b,w,epf,c,d,a,be):
+ nt[0]+=1
+ if d<1 or nt[0]>150000:return qs(b,w,epf,c,a,be,2)
+ sc=-99999
+ for m in gen(b,w,epf,c):
+  nb=mv(b[:],m,epf,w)
+  if chk(nb,w):continue
+  v=-ab(nb,not w,-1,c,d-1,-be,-a)
+  if v>sc:sc=v
+  if sc>a:a=sc
+  if a>=be:break
+ return sc
+def pick(f,lm):
+ b=fen(f);w=f.split()[1]=='w'
+ epf=sq(f.split()[3]) if f.split()[3]!='-' else -1;c=f.split()[2]
+ best=lm[0];bs=-99999
+ for s in lm:
+  m=(sq(s[:2]),sq(s[2:4]))+((s[4],) if len(s)>4 else ())
+  v=-ab(mv(b[:],m,epf,w),not w,-1,c,2,-99999,99999)
+  if v>bs:bs=v;best=s
+ return best
+g=P('/game',{})
+while g.get('status')!='done':
+ if g.get('status')=='your_move':P('/move',{'game':g['game'],'move':pick(g['fen'],g['legal_moves'])})
+ g=P('/game',{})
