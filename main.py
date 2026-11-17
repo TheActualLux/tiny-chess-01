@@ -1,181 +1,124 @@
-importsys
-importtime
-F="abcdefgh"
-V={"p":100,"n":320,"b":330,"r":500,"q":900,"k":0}
-N=((1,2),(2,1),(2,-1),(1,-2),(-1,-2),(-2,-1),(-2,1),(-1,2))
-K=((1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1),(0,-1),(1,-1))
-B=((1,1),(1,-1),(-1,1),(-1,-1))
-R=((1,0),(-1,0),(0,1),(0,-1))
-S="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-defw(ch):
-returnch.isupper()
-defp(fen):
-b=["."]*64
-forr,rowinenumerate(fen.split()[0].split("/")):
-c=0
-forchinrow:
-ifch.isdigit():
-c+=int(ch)
-else:
-b[r*8+c]=ch
-c+=1
-returnb,fen.split()[1]
-defg(b,s):
-m=[]
-fori,chinenumerate(b):
-ifch=="."orw(ch)!=(s=="w"):
-continue
-r,c=divmod(i,8)
-lo=ch.lower()
-iflo=="p":
-d=-1ifs=="w"else1
-if0<=r+d<8andb[(r+d)*8+c]==".":
-m.append((i,(r+d)*8+c))
-ifr==(6ifs=="w"else1)andb[(r+2*d)*8+c]==".":
-m.append((i,(r+2*d)*8+c))
-forein(-1,1):
-if0<=r+d<8and0<=c+e<8:
-t=(r+d)*8+c+e
-ifb[t]!="."andw(b[t])!=(s=="w"):
-m.append((i,t))
-elifloin"nk":
-fordr,dcin(Niflo=="n"elseK):
-x,y=r+dr,c+dc
-if0<=x<8and0<=y<8and(b[x*8+y]=="."orw(b[x*8+y])!=(s=="w")):
-m.append((i,x*8+y))
-else:
-fordr,dcin(Biflo=="b"elseRiflo=="r"elseB+R):
-x,y=r+dr,c+dc
-while0<=x<8and0<=y<8:
-t=x*8+y
-ifb[t]!="."andw(b[t])==(s=="w"):
-break
-m.append((i,t))
-ifb[t]!=".":
-break
-x+=dr
-y+=dc
-returnm
-defa(b,mv,s):
-n=list(b)
-n[mv[1]]=n[mv[0]]
-n[mv[0]]="."
-ifn[mv[1]].lower()=="p"andmv[1]//8in(0,7):
-n[mv[1]]="Q"ifs=="w"else"q"
-returnn
-defh(b,q,y):
-r,c=divmod(q,8)
-fordr,dcinK:
-x,z=r+dr,c+dc
-if0<=x<8and0<=z<8andb[x*8+z].lower()=="k"andw(b[x*8+z])==(y=="w"):
-return1
-fordr,dcinN:
-x,z=r+dr,c+dc
-if0<=x<8and0<=z<8andb[x*8+z].lower()=="n"andw(b[x*8+z])==(y=="w"):
-return1
-d=-1ify=="w"else1
-forein(-1,1):
-x,z=r-d,c+e
-if0<=x<8and0<=z<8andb[x*8+z].lower()=="p"andw(b[x*8+z])==(y=="w"):
-return1
-fordr,dcinB+R:
-x,z=r+dr,c+dc
-while0<=x<8and0<=z<8:
-ch=b[x*8+z]
-ifch!=".":
-ifw(ch)==(y=="w")and(ch.lower()=="q"or(ch.lower()=="r"and(dr==0ordc==0))or(ch.lower()=="b"anddranddc)):
-return1
-break
-x+=dr
-z+=dc
-return0
-defl(b,mv,s):
-n=a(b,mv,s)
-o="b"ifs=="w"else"w"
-k=next((ifori,chinenumerate(n)ifch.lower()=="k"andw(ch)!=(o=="w")),-1)
-return1ifk<0elsenoth(n,k,o)
-defv(b,s):
-t=0
-fori,chinenumerate(b):
-ifch==".":
-continue
-r,c=divmod(i,8)
-q=V[ch.lower()]+int((3.5-abs(3.5-r)-abs(3.5-c))*3)
-t+=qifw(ch)==(s=="w")else-q
-returnt
-defd(b,s,n,al,be,ply=0):
-ms=[mforming(b,s)ifl(b,m,s)]
-ifnotms:
-return-9999+ply,None
-ifn<1:
-returnv(b,s),ms[0]
-ms.sort(key=lambdam:V[b[m[1]].lower()]ifb[m[1]]!="."else0,reverse=True)
-best,pick=-99999,ms[0]
-forminms:
-sc=-d(a(b,m,s),"b"ifs=="w"else"w",n-1,-be,-al,ply+1)[0]
-ifsc>best:
-best,pick=sc,m
-al=max(al,best)
-ifal>=be:
-break
-returnbest,pick
-defgo(b,s,bud):
-ms=[mforming(b,s)ifl(b,m,s)]
-ifnotms:
-returnNone
-pick=ms[0]
-end=time.time()+bud
-fordepinrange(1,6):
-iftime.time()>end:
-break
-pick=d(b,s,dep,-99999,99999)[1]orpick
-returnpick
-defsq(i):
-r,c=divmod(i,8)
-returnF[c]+str(8-r)
-defmv(b,s,tok):
-forming(b,s):
-ifsq(m[0])+sq(m[1])==tok[:4]:
-returnm
-returnNone
-defmain():
-b,s=p(S)
-forlineinsys.stdin:
-t=line.split()
-ifnott:
-continue
-ift[0]=="uci":
-print("id name tiny4k\nuciok",flush=True)
-elift[0]=="isready":
-print("readyok",flush=True)
-elift[0]=="ucinewgame":
-b,s=p(S)
-elift[0]=="position":
-if"startpos"int:
-b,s=p(S)
-rest=t[t.index("startpos")+1:]
-else:
-i=t.index("fen")+1
-try:
-b,s=p(" ".join(t[i:i+6]))
-exceptException:
-b,s=p(S)
-rest=t[i+6:]
-if"moves"inrest:
-fortokinrest[rest.index("moves")+1:]:
-m=mv(b,s,tok)
-ifm:
-b=a(b,m,s)
-s="b"ifs=="w"else"w"
-elift[0]=="go":
-bud=2.0
-if"movetime"int:
-bud=max(0.05,int(t[t.index("movetime")+1])/1000-0.15)
-elif"wtime"int:
-bud=max(0.05,int(t[t.index("wtime")+1])/40000)
-m=go(b,s,bud)
-print("bestmove "+(sq(m[0])+sq(m[1])ifmelse"0000"),flush=True)
-elift[0]=="quit":
-break
-if__name__=="__main__":
-main()
+import sys
+B=list("rnbqkbnr"+"pppppppp"+"."*32+"PPPPPPPP"+"RNBQKBNR")
+V={'p':100,'n':320,'b':330,'r':500,'q':900,'k':0,'.':0}
+N=[(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
+K=[(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
+G={'n':N,'b':[(-1,-1),(-1,1),(1,-1),(1,1)],'r':[(0,1),(0,-1),(1,0),(-1,0)],'q':K,'k':K}
+def pc(i):return B[i]
+def side(p):return p.isupper()
+def idx(s):return (8-int(s[1]))*8+ord(s[0])-97
+def nm(i):return "abcdefgh"[i%8]+str(8-i//8)
+def gen(w):
+    out=[]
+    for i,p in enumerate(B):
+        if p=='.' or side(p)!=w:continue
+        t=p.lower();r,c=divmod(i,8);d=-1 if w else 1
+        if t=='p':
+            j=i+8*d
+            if 0<=j<64 and B[j]=='.':
+                out.append((i,j,'q' if r+d in(0,7) else ''))
+                j2=i+16*d
+                if r in(1,6)and B[j2]=='.':out.append((i,j2,''))
+            for dc in(-1,1):
+                c2=c+dc;r2=r+d
+                if 0<=c2<8 and 0<=r2<8:
+                    j=r2*8+c2
+                    if B[j]!='.' and side(B[j])!=w:out.append((i,j,'q' if r2 in(0,7) else ''))
+        elif t=='n' or t=='k':
+            for dr,dc in G[t]:
+                r2,c2=r+dr,c+dc
+                if 0<=r2<8 and 0<=c2<8:
+                    j=r2*8+c2
+                    if B[j]=='.' or side(B[j])!=w:out.append((i,j,''))
+        else:
+            for dr,dc in G[t]:
+                r2,c2=r+dr,c+dc
+                while 0<=r2<8 and 0<=c2<8:
+                    j=r2*8+c2
+                    if B[j]!='.':
+                        if side(B[j])!=w:out.append((i,j,''))
+                        break
+                    out.append((i,j,''))
+                    r2+=dr;c2+=dc
+    return out
+def put(b,i,j,pr=''):
+    b[j]=b[i].lower() if pr else b[i];b[i]='.'
+    if pr:b[j]=pr.upper() if side(b[j]) else pr
+def king(b,w):
+    t='K' if w else 'k'
+    return b.index(t)
+def att(b,sq,w):
+    for i,p in enumerate(b):
+        if p=='.' or side(p)!=w:continue
+        r,c=divmod(i,8);t=p.lower()
+        if t=='p':
+            d=-1 if w else 1
+            if sq//8==r+d and abs(sq%8-c)==1:return 1
+        elif t in G:
+            for dr,dc in G[t]:
+                r2,c2=r+dr,c+dc
+                while 0<=r2<8 and 0<=c2<8:
+                    if r2*8+c2==sq:return 1
+                    if b[r2*8+c2]!='.':break
+                    r2+=dr;c2+=dc
+                    if t in'nk':break
+    return 0
+def legal(w):
+    out=[]
+    for m in gen(w):
+        b=B[:]
+        put(b,m[0],m[1],m[2])
+        e=-1
+        if att(b,king(b,w),not w):continue
+        out.append(m)
+    return out
+def perft(w,d):
+    if d==0:return 1
+    n=0
+    for m in legal(w):
+        global B
+        old=B;B=B[:];put(B,m[0],m[1],m[2])
+        n+=perft(not w,d-1)
+        B=old
+    return n
+def ev():
+    s=0
+    for p in B:
+        if p=='.':continue
+        v=V[p.lower()]
+        s+= v if side(p) else -v
+    return s
+def search(w,d,a,b):
+    if d==0:return ev() if w else -ev(),None
+    best=None;sc=-99999 if w else 99999
+    for m in legal(w):
+        global B
+        old=B;B=B[:];put(B,m[0],m[1],m[2])
+        v,_=search(not w,d-1,a,b)
+        B=old
+        if w and v>sc:sc,best=v,m
+        if not w and v<sc:sc,best=v,m
+    return sc,best
+def mv(s):
+    a=idx(s[:2]);c=idx(s[2:4]);pr=s[4:5] if len(s)>4 else ''
+    put(B,a,c,pr)
+w=True
+for line in sys.stdin:
+    t=line.split()
+    if not t:continue
+    if t[0]=='uci':print('id name tiny4k');print('id author gn-buffy-swarm');print('uciok')
+    elif t[0]=='isready':print('readyok')
+    elif t[0]=='position':
+        B=list("rnbqkbnr"+"pppppppp"+"."*32+"PPPPPPPP"+"RNBQKBNR");w=True
+        if 'moves' in t:
+            for s in t[t.index('moves')+1:]:mv(s);w=not w
+    elif t[0]=='go' and 'perft' in t:
+        print('nodes',perft(w,int(t[t.index('perft')+1])))
+    elif t[0]=='go':
+        d=4
+        if 'depth' in t:d=int(t[t.index('depth')+1])
+        sc,m=search(w,d,-99999,99999)
+        print('info depth',d,'score cp',sc)
+        print('bestmove',nm(m[0])+nm(m[1]) if m else '0000')
+    elif t[0]=='quit':break
+    sys.stdout.flush()
